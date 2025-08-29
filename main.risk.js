@@ -1,4 +1,5 @@
 
+/* main.risk.js — clean face (no numbers), Arabic label colored by band; white needle */
 (() => {
   const tpl = document.createElement('template');
   tpl.innerHTML = `
@@ -12,11 +13,8 @@
       }
       #root { position: relative; width: 100%; height: 100%; }
       svg { width: 100%; height: 100%; display: block; }
-      #center {
-        position: absolute; left: 0; right: 0; bottom: 10%;
-        text-align: center; pointer-events: none;
-      }
-      #value { display:none; } /* force hide numeric value */
+      #center { position: absolute; left: 0; right: 0; bottom: 10%; text-align: center; pointer-events: none; }
+      #value { display: none; } /* force-hide numeric value */
       #label { line-height: 1.1; font-weight: 600; }
     </style>
     <div id="root">
@@ -67,8 +65,9 @@
     }
 
     _stops() {
+      // Default 0..5; also supports 0..1 decimals if you set stops that way in the manifest
       let s = this.stops;
-      if (!Array.isArray(s)) s = [0, 1, 2, 3, 4, 5]; // default 0..5
+      if (!Array.isArray(s)) s = [0, 1, 2, 3, 4, 5];
       s = s.map(Number).filter(Number.isFinite).sort((a,b)=>a-b);
       s = [...new Set(s)];
       if (s.length < 2) s = [0, 5];
@@ -96,8 +95,7 @@
       };
       try {
         if (b && typeof b.getData === 'function') {
-          const d = b.getData(); const n = firstNumber(d);
-          if (Number.isFinite(n)) return n;
+          const d = b.getData(); const n = firstNumber(d); if (Number.isFinite(n)) return n;
         }
       } catch (e) {}
       if (b) {
@@ -129,9 +127,6 @@
         : ['#256f3a', '#87c122', '#f9e339', '#ea9617', '#ea1e32']; // green → red
       const bandThickness = Math.max(10, Number(P(this,'bandThickness', 24)));
       const innerOpacity = Number(P(this,'innerBandOpacity', 0.35));
-      // Force a clean face: no ticks, no numeric labels
-      const cleanFace = true;
-      const tickColor = String(P(this,'tickColor', '#9ca3af'));
       const snapToStops = !!P(this,'snapToStops', true);
       const needleColor = String(P(this,'needleColor', '#ffffff')); // white
 
@@ -149,10 +144,10 @@
       const innerStrokeW = Math.max(6, strokeW * 0.55);
       const innerR = r - (strokeW*0.25);
 
-      // clear
+      // clear any previous elements
       while (this._svg.firstChild) this._svg.removeChild(this._svg.firstChild);
 
-      // segments
+      // draw bands (outer + inner darker)
       for (let i = 0; i < stops.length-1; i++) {
         let c = bandColors[Math.min(i, bandColors.length-1)];
         if (reverse) c = bandColors[Math.min(stops.length-2-i, bandColors.length-1)];
@@ -176,72 +171,48 @@
         this._svg.appendChild(inner);
       }
 
-      // (intentionally not drawing ticks/values to keep the face clean)
-      if (!cleanFace) {
-        for (const s of stops) {
-          const a = toAngle(s);
-          const inner = r - strokeW * 0.75;
-          const outer = r + strokeW * 0.05;
-          const x1 = cx + inner * Math.cos(a), y1 = cy + inner * Math.sin(a);
-          const x2 = cx + outer * Math.cos(a), y2 = cy + outer * Math.sin(a);
-          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-          line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-          line.setAttribute('stroke', tickColor);
-          line.setAttribute('stroke-width', Math.max(1.5, strokeW * 0.06));
-          this._svg.appendChild(line);
-        }
-      }
-
-      // value (from binding or property)
+      // compute value & snap to nearest stop
       let raw = this._extractValue();
       if (!Number.isFinite(raw)) raw = inputMin;
       let v = remap(raw, inputMin, inputMax, scaleMin, scaleMax);
       v = clamp(v, scaleMin, scaleMax);
-
-      // snap
       if (snapToStops) {
         let best = stops[0], bestDist = Math.abs(v - best);
-        for (let i=1; i<stops.length; i++) {
-          const d = Math.abs(v - stops[i]);
-          if (d < bestDist) { best = stops[i]; bestDist = d; }
-        }
+        for (let i=1; i<stops.length; i++) { const d = Math.abs(v - stops[i]); if (d < bestDist) { best = stops[i]; bestDist = d; } }
         v = best;
       }
 
-      // needle (white)
+      // needle (white) + knob
       const a = toAngle(v);
       const nx = cx + (r - strokeW * 0.6) * Math.cos(a);
       const ny = cy + (r - strokeW * 0.6) * Math.sin(a);
       const needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       needle.setAttribute('x1', cx); needle.setAttribute('y1', cy);
       needle.setAttribute('x2', nx); needle.setAttribute('y2', ny);
-      needle.setAttribute('stroke', '#ffffff');
+      needle.setAttribute('stroke', needleColor);
       needle.setAttribute('stroke-linecap', 'round');
       needle.setAttribute('stroke-width', Math.max(3, strokeW * 0.14));
       this._svg.appendChild(needle);
 
-      // knob
       const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
       ring.setAttribute('r', Math.max(10, strokeW * 0.42));
       ring.setAttribute('fill', '#fff');
-      ring.setAttribute('stroke', '#ffffff');
+      ring.setAttribute('stroke', needleColor);
       ring.setAttribute('stroke-width', Math.max(2, strokeW * 0.10));
       this._svg.appendChild(ring);
 
       const knob = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       knob.setAttribute('cx', cx); knob.setAttribute('cy', cy);
       knob.setAttribute('r', Math.max(6, strokeW * 0.26));
-      knob.setAttribute('fill', '#ffffff');
+      knob.setAttribute('fill', needleColor);
       this._svg.appendChild(knob);
 
-      // Arabic risk labels (default)
+      // Arabic risk labels (default), colored by current band
       const arabic = ['منخفض','منخفض متوسط','متوسط','مرتفع متوسط','مرتفع'];
       const riskLabels = Array.isArray(this.riskLabels) && this.riskLabels.length ? this.riskLabels : arabic;
 
-      // figure out current band index to color the label
-      const idx = stops.findIndex(s => v <= s);        // 1..N
+      const idx = stops.findIndex(s => v <= s);
       const bandIdx = Math.max(0, Math.min(stops.length - 2, idx - 1));
       let colorIndex = bandIdx;
       if (reverse) colorIndex = (stops.length - 2) - bandIdx;
@@ -257,3 +228,4 @@
 
   customElements.define('com-sap-sac-sample-echarts-gaugegrade', RiskGauge);
 })();
+
