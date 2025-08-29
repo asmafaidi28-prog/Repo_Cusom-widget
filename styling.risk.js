@@ -3,7 +3,10 @@
   const tpl = document.createElement('template');
   tpl.innerHTML = `<style>
     :host {
-      --sac-gauge-tick: #c4a062;
+        sac-gauge-tick: #6b7280;
+        sac-gauge-label: var(--sapTextColor, #111);
+        sac-gauge-needle: #FFFFFF;
+        sac-gauge-knob: #111827;
     }
   </style>`;
   class GaugeStyling extends HTMLElement {
