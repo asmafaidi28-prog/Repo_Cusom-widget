@@ -30,18 +30,15 @@
 
   const P = (el, name, def) => (el[name] !== undefined ? el[name] : def);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const lerp = (a, b, t) => a + (b - a) * t;
   const remap = (v, a1, a2, b1, b2) => b1 + (clamp(v, a1, a2) - a1) * (b2 - b1) / (a2 - a1 || 1);
 
-  // Quick color shade (negative percent -> darker)
   function shade(hex, pct) {
-    // accepts #rrggbb
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!m) return hex;
     let r = parseInt(m[1],16), g = parseInt(m[2],16), b = parseInt(m[3],16);
-    r = Math.round( clamp(r * (1 + pct/100), 0, 255) );
-    g = Math.round( clamp(g * (1 + pct/100), 0, 255) );
-    b = Math.round( clamp(b * (1 + pct/100), 0, 255) );
+    r = Math.round(Math.max(0, Math.min(255, r * (1 + pct/100))));
+    g = Math.round(Math.max(0, Math.min(255, g * (1 + pct/100))));
+    b = Math.round(Math.max(0, Math.min(255, b * (1 + pct/100))));
     const toHex = n => n.toString(16).padStart(2,'0');
     return '#' + toHex(r) + toHex(g) + toHex(b);
   }
@@ -55,7 +52,6 @@
       this._valueEl = this._shadow.getElementById('value');
       this._labelEl = this._shadow.getElementById('label');
       this._w = 300; this._h = 200;
-      this._prevScaled = null;
     }
 
     connectedCallback() { this._resize(); this._render(); }
@@ -72,16 +68,14 @@
 
     _getStops() {
       let stops = this.stops;
-      if (!Array.isArray(stops)) stops = [0,2,4,6,8,10]; // default five bands
-      // sanitize
+      if (!Array.isArray(stops)) stops = [0, 0.2, 0.4, 0.6, 0.8, 1];
       stops = stops.map(Number).filter(Number.isFinite).sort((a,b)=>a-b);
       stops = [...new Set(stops)];
-      if (stops.length < 2) stops = [0,10];
+      if (stops.length < 2) stops = [0,1];
       return stops;
     }
 
     _extractValue() {
-      // Try data binding first
       const b = this.dataBinding;
       const firstNumber = (obj, visited=new Set()) => {
         if (obj == null) return null;
@@ -91,7 +85,6 @@
         if (Array.isArray(obj)) {
           for (const v of obj) { const n = firstNumber(v, visited); if (Number.isFinite(n)) return n; }
         } else {
-          // priority keys
           for (const k of Object.keys(obj)) {
             if (k.toLowerCase().includes('value') || k.toLowerCase().includes('raw')) {
               const n = firstNumber(obj[k], visited); if (Number.isFinite(n)) return n;
@@ -113,7 +106,6 @@
           if (b[k]!=null) { const n = firstNumber(b[k]); if (Number.isFinite(n)) return n; }
         }
       }
-      // fallback property
       if (Number.isFinite(Number(this.value))) return Number(this.value);
       return NaN;
     }
@@ -122,34 +114,32 @@
       const w = this._w, h = this._h;
       const cx = w/2, cy = h*0.92;
 
-      // Properties / appearance
-      const stops = this._getStops(); // e.g., [0,2,4,6,8,10]
+      // Properties
+      const stops = this._getStops(); // e.g., [0,0.2,...,1]
       const scaleMin = Number(P(this,'scaleMin',0));
-      const scaleMax = Number(P(this,'scaleMax',10));
-      const inputMin = Number(P(this,'inputMin',1));
-      const inputMax = Number(P(this,'inputMax',5));
-
+      const scaleMax = Number(P(this,'scaleMax',1));
+      const inputMin = Number(P(this,'inputMin',0));
+      const inputMax = Number(P(this,'inputMax',1));
       const startDeg = Number(P(this,'startAngle',-180));
       const endDeg   = Number(P(this,'endAngle',0));
       const reverse  = !!P(this,'reverse', false);
-      const showTicks = !!P(this,'showTicks', false);
-      const showLabels = !!P(this,'showLabels', false); // image shows no labels
-      const valueFS = Number(P(this,'valueFontScale', 0.10));
-      const labelFS = Number(P(this,'labelFontScale', 0.045));
-      const decimals = Number(P(this,'decimals', 0));
-      const displayScaled = !!P(this,'displayScaled', false);
 
       const bandColors = Array.isArray(this.bandColors) && this.bandColors.length
         ? this.bandColors
-        : ['#16a34a','#84cc16','#facc15','#f97316','#ef4444']; // green -> red
+        : ['#256f3a','#87c122','#f9e339','#ea9617','#ea1e32']; // green → red
       const bandThickness = Math.max(10, Number(P(this,'bandThickness', 24)));
       const innerOpacity = Number(P(this,'innerBandOpacity', 0.35));
-      const tickColor = String(P(this,'tickColor', '#c4a062'));
-
-      const r = Math.min(w, h*2) * 0.46;
-      const strokeW = bandThickness;
-      const innerStrokeW = Math.max(6, strokeW * 0.55);
-      const innerR = r - (strokeW*0.25);
+      const showTicks = !!P(this,'showTicks', true);
+      const showLabels = !!P(this,'showLabels', true);
+      const tickColor = String(P(this,'tickColor', '#9ca3af'));
+      const showValue = !!P(this,'showValue', false);
+      const showRiskLabel = !!P(this,'showRiskLabel', true);
+      const snapToStops = !!P(this,'snapToStops', true);
+      const needleColor = String(P(this,'needleColor', '#ffffff'));
+      const valueFS = Number(P(this,'valueFontScale', 0.10));
+      const labelFS = Number(P(this,'labelFontScale', 0.045));
+      const decimals = Number(P(this,'decimals', 2));
+      const displayScaled = !!P(this,'displayScaled', true);
 
       const toRad = d => (d * Math.PI) / 180;
       const toAngle = v => toRad(startDeg) + ((v - scaleMin)/(scaleMax - scaleMin)) * (toRad(endDeg) - toRad(startDeg));
@@ -160,10 +150,15 @@
         return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}`;
       };
 
+      const r = Math.min(w, h*2) * 0.46;
+      const strokeW = bandThickness;
+      const innerStrokeW = Math.max(6, strokeW * 0.55);
+      const innerR = r - (strokeW*0.25);
+
       // Clear
       while (this._svg.firstChild) this._svg.removeChild(this._svg.firstChild);
 
-      // Draw segments (outer bright band + inner darker band)
+      // Draw bands
       for (let i = 0; i < stops.length-1; i++) {
         let c = bandColors[Math.min(i, bandColors.length-1)];
         if (reverse) c = bandColors[Math.min(stops.length-2-i, bandColors.length-1)];
@@ -187,7 +182,7 @@
         this._svg.appendChild(inner);
       }
 
-      // Optional ticks at stops
+      // Ticks
       if (showTicks) {
         for (const s of stops) {
           const a = toAngle(s);
@@ -204,53 +199,78 @@
         }
       }
 
-      // Value
+      // Value from binding/property
       let raw = this._extractValue();
       if (!Number.isFinite(raw)) raw = inputMin;
-      const scaled = remap(raw, inputMin, inputMax, scaleMin, scaleMax);
-      const a = toAngle(scaled);
+      let scaled = remap(raw, inputMin, inputMax, scaleMin, scaleMax);
+      scaled = clamp(scaled, scaleMin, scaleMax);
+
+      // Snap to nearest stop if requested
+      if (snapToStops && Array.isArray(stops) && stops.length > 0) {
+        let best = stops[0], bestDist = Math.abs(scaled - best);
+        for (let i=1;i<stops.length;i++) {
+          const d = Math.abs(scaled - stops[i]);
+          if (d < bestDist) { best = stops[i]; bestDist = d; }
+        }
+        scaled = best;
+      }
 
       // Needle
+      const a = toAngle(scaled);
       const nx = cx + (r - strokeW * 0.6) * Math.cos(a);
       const ny = cy + (r - strokeW * 0.6) * Math.sin(a);
       const needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       needle.setAttribute('x1', cx); needle.setAttribute('y1', cy);
       needle.setAttribute('x2', nx); needle.setAttribute('y2', ny);
-      needle.setAttribute('stroke', '#000'); needle.setAttribute('stroke-linecap','round');
+      needle.setAttribute('stroke', needleColor);
+      needle.setAttribute('stroke-linecap','round');
       needle.setAttribute('stroke-width', Math.max(3, strokeW * 0.14));
       this._svg.appendChild(needle);
 
-      // Knob (white ring + black center)
+      // Knob (white ring + center same as needle)
       const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
       ring.setAttribute('r', Math.max(10, strokeW * 0.42));
       ring.setAttribute('fill', '#fff');
-      ring.setAttribute('stroke', '#000');
+      ring.setAttribute('stroke', needleColor);
       ring.setAttribute('stroke-width', Math.max(2, strokeW * 0.10));
       this._svg.appendChild(ring);
 
       const knob = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       knob.setAttribute('cx', cx); knob.setAttribute('cy', cy);
       knob.setAttribute('r', Math.max(6, strokeW * 0.26));
-      knob.setAttribute('fill', '#000');
+      knob.setAttribute('fill', needleColor);
       this._svg.appendChild(knob);
 
-      // Center text (optional, left enabled)
-      const displayVal = displayScaled ? scaled : raw;
-      this._valueEl.textContent = String(displayVal.toFixed(decimals));
-      this._valueEl.style.fontSize = Math.max(16, w * valueFS) + 'px';
+      // Center text controls
+      if (showValue) {
+        const displayVal = displayScaled ? scaled : raw;
+        this._valueEl.textContent = String(displayVal.toFixed(decimals));
+        this._valueEl.style.display = '';
+        this._valueEl.style.fontSize = Math.max(16, w * valueFS) + 'px';
+      } else {
+        this._valueEl.textContent = '';
+        this._valueEl.style.display = 'none';
+      }
 
-      // Risk label via stops
-      const idx = stops.findIndex(s => scaled <= s);
-      const bucket = Math.max(1, idx); // 1..N
       const riskLabels = Array.isArray(this.riskLabels) && this.riskLabels.length
         ? this.riskLabels
         : ['Low','Medium Low','Medium','Medium High','High'];
+      const idx = stops.findIndex(s => scaled <= s);
+      const bucket = Math.max(1, idx);
       const label = riskLabels[Math.min(bucket-1, riskLabels.length-1)] || '';
-      this._labelEl.textContent = label;
-      this._labelEl.style.fontSize = Math.max(10, w * labelFS) + 'px';
+
+      if (showRiskLabel) {
+        this._labelEl.textContent = label;
+        this._labelEl.style.display = '';
+        this._labelEl.style.fontSize = Math.max(10, w * labelFS) + 'px';
+      } else {
+        this._labelEl.textContent = '';
+        this._labelEl.style.display = 'none';
+      }
     }
   }
 
   customElements.define('com-sap-sac-sample-echarts-gaugegrade', RiskGauge);
 })();
+
