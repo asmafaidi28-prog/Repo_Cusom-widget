@@ -1,0 +1,23 @@
+
+(() => {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = `
+    <style>
+      :host {
+        /* Expose design tokens you can override in SAC styling panel */
+        --sac-gauge-tick: #6b7280;
+        --sac-gauge-label: var(--sapTextColor, #111);
+        --sac-gauge-needle: #111827;
+        --sac-gauge-knob: #111827;
+      }
+    </style>
+  `;
+  class GaugeStyling extends HTMLElement {
+    constructor() {
+      super();
+      const shadow = this.attachShadow({ mode: 'open' });
+      shadow.appendChild(tpl.content.cloneNode(true));
+    }
+  }
+  customElements.define('com-sap-sac-sample-echarts-gaugegrade-styling', GaugeStyling);
+})();
