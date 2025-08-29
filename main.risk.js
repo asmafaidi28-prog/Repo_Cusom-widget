@@ -14,7 +14,7 @@
       #root { position: relative; width: 100%; height: 100%; }
       svg { width: 100%; height: 100%; display: block; }
       #center { position: absolute; left: 0; right: 0; bottom: 10%; text-align: center; pointer-events: none; }
-      #value { display: none; } /* force-hide numeric value */
+      #value { display: none !important; } /* FORCE hide numeric value */
       #label { line-height: 1.1; font-weight: 600; }
     </style>
     <div id="root">
@@ -128,7 +128,7 @@
       const bandThickness = Math.max(10, Number(P(this,'bandThickness', 24)));
       const innerOpacity = Number(P(this,'innerBandOpacity', 0.35));
       const snapToStops = !!P(this,'snapToStops', true);
-      const needleColor = String(P(this,'needleColor', '#ffffff')); // white
+      const needleColor = '#ffffff'; // FORCE white needle
 
       const toRad = d => (d * Math.PI) / 180;
       const toAngle = v => toRad(startDeg) + ((v - scaleMin)/(scaleMax - scaleMin)) * (toRad(endDeg) - toRad(startDeg));
@@ -144,10 +144,10 @@
       const innerStrokeW = Math.max(6, strokeW * 0.55);
       const innerR = r - (strokeW*0.25);
 
-      // clear any previous elements
+      // clear
       while (this._svg.firstChild) this._svg.removeChild(this._svg.firstChild);
 
-      // draw bands (outer + inner darker)
+      // draw segments (no ticks or numeric labels for clean face)
       for (let i = 0; i < stops.length-1; i++) {
         let c = bandColors[Math.min(i, bandColors.length-1)];
         if (reverse) c = bandColors[Math.min(stops.length-2-i, bandColors.length-1)];
@@ -171,14 +171,17 @@
         this._svg.appendChild(inner);
       }
 
-      // compute value & snap to nearest stop
+      // value (from binding or property) & snap to nearest stop
       let raw = this._extractValue();
       if (!Number.isFinite(raw)) raw = inputMin;
       let v = remap(raw, inputMin, inputMax, scaleMin, scaleMax);
       v = clamp(v, scaleMin, scaleMax);
       if (snapToStops) {
         let best = stops[0], bestDist = Math.abs(v - best);
-        for (let i=1; i<stops.length; i++) { const d = Math.abs(v - stops[i]); if (d < bestDist) { best = stops[i]; bestDist = d; } }
+        for (let i=1; i<stops.length; i++) {
+          const d = Math.abs(v - stops[i]);
+          if (d < bestDist) { best = stops[i]; bestDist = d; }
+        }
         v = best;
       }
 
@@ -208,16 +211,14 @@
       knob.setAttribute('fill', needleColor);
       this._svg.appendChild(knob);
 
-      // Arabic risk labels (default), colored by current band
+      // Arabic labels colored by the band color
       const arabic = ['منخفض','منخفض متوسط','متوسط','مرتفع متوسط','مرتفع'];
       const riskLabels = Array.isArray(this.riskLabels) && this.riskLabels.length ? this.riskLabels : arabic;
-
       const idx = stops.findIndex(s => v <= s);
       const bandIdx = Math.max(0, Math.min(stops.length - 2, idx - 1));
       let colorIndex = bandIdx;
       if (reverse) colorIndex = (stops.length - 2) - bandIdx;
       const labelColor = bandColors[Math.min(colorIndex, bandColors.length - 1)] || 'currentColor';
-
       const label = riskLabels[Math.min(bandIdx, riskLabels.length-1)] || '';
       this._labelEl.textContent = label;
       this._labelEl.style.display = '';
