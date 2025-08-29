@@ -7,7 +7,7 @@
         /* Expose design tokens you can override in SAC styling panel */
         --sac-gauge-tick: #6b7280;
         --sac-gauge-label: var(--sapTextColor, #111);
-        --sac-gauge-needle: #111827;
+        --sac-gauge-needle: #FFFFFF;
         --sac-gauge-knob: #111827;
       }
     </style>
