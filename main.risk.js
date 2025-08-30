@@ -8,7 +8,7 @@
         display: block;
         width: 100%;
         height: 100%;
-        color: var(--sapTextColor, #111);
+        color: var(--sapTextColor, #ffff);
         font-family: var(--sapFontFamily, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica, Arial);
       }
       #root { position: relative; width: 100%; height: 100%; }
