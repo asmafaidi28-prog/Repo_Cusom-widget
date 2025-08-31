@@ -247,5 +247,5 @@
     }
   }
 
-  customElements.define('com-sap-sac-sample-echarts-gaugegrade', RiskGauge);
+  customElements.define('com-sap-sac-sample-echarts-gaugegrade05', RiskGauge);
 })();
