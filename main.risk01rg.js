@@ -14,7 +14,13 @@
       }
       #root { position: relative; width: 100%; height: 100%; }
       svg { width: 100%; height: 100%; display: block; }
-      #center {
+      /* Label only (no numeric value) */
+      #label {
+        position: absolute; left: 0; right: 0;
+        text-align: center; pointer-events: none;
+        line-height: 1.1; font-weight: 700; letter-spacing: .3px;
+      }
+      #center-REMOVE {
         position: absolute; left: 0; right: 0; bottom: 10%;
         text-align: center; pointer-events: none;
       }
@@ -23,9 +29,7 @@
     </style>
     <div id="root">
       <svg id="gauge" preserveAspectRatio="xMidYMid meet" part="gauge"></svg>
-      <div id="center" part="center">
-        <div id="label" part="label"></div>
-      </div>
+      <div id="label" part="label"></div>
     </div>
   `;
 
@@ -52,6 +56,7 @@
       this._labelEl = this._shadow.getElementById('label');
       this._w = 300; this._h = 200;
       this._prevValue = null; // for tween
+      this._knobR = 10;       // will be updated in _drawNeedle
     }
 
     connectedCallback() { this._resize(); this._render(true); }
@@ -185,6 +190,7 @@
         // redraw needle/center only (leave bands)
         this._drawNeedle(cx, cy, r, strokeW, toAngle(v));
         this._paintLabel(v, scaleMin, scaleMax, w);
+        this._positionLabel(cy, w, h); // keep label under knob
 
         if (t < 1) requestAnimationFrame(step);
         else this._prevValue = target;
@@ -248,4 +254,12 @@
   }
 
   customElements.define('com-sap-sac-sample-echarts-gaugegrade01rg', RiskGauge);
+
+    _positionLabel(cy, w, h) {
+      const gap = Math.max(8, this._knobR * 0.6);
+      const y = Math.min(h - 4, cy + this._knobR + gap);
+      this._labelEl.style.top = y + 'px';
+      this._labelEl.style.left = '0';
+      this._labelEl.style.right = '0';
+    }
 })();
