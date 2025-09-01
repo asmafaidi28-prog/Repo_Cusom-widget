@@ -245,6 +245,13 @@
       else if (v05 >= 3 && v05 < 4) { color = '#ea9617'; text = 'مرتفع متوسط'; }
       else                          { color = '#ea1e32'; text = 'مرتفع'; }
 
+      let color = '#ea1e32', text = 'منخفض';
+      if      (v05 >= 0 && v05 < 1) { color = '#ea1e32'; text = 'منخفض'; }
+      else if (v05 >= 1 && v05 < 2) { color = '#ea9617'; text = 'منخفض متوسط'; }
+      else if (v05 >= 2 && v05 < 3) { color = '#f9e339'; text = 'متوسط'; }
+      else if (v05 >= 3 && v05 < 4) { color = '#87c122'; text = 'مرتفع متوسط'; }
+      else                          { color = '#256f3a'; text = 'مرتفع'; }
+
       this._labelEl.textContent = text;
       this._labelEl.style.color = color;
       this._labelEl.style.fontSize = Math.min(Math.max(14, w * 0.07), 28) + 'px';
