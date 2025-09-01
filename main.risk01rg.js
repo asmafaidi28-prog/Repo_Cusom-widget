@@ -1,3 +1,4 @@
+
 /* main.risk.js — clean gauge with Arabic label only.
    Color intervals (0–1 green, 1–2 light-green, 2–3 yellow, 3–4 orange, 4–5 red).
    Numeric value removed. Needle + knob forced white. Subtle track & animation. */
@@ -16,16 +17,15 @@
       svg { width: 100%; height: 100%; display: block; }
       /* Label only (no numeric value) */
       #label {
-        position: absolute; left: 0; right: 0;
-        text-align: center; pointer-events: none;
-        line-height: 1.1; font-weight: 700; letter-spacing: .3px;
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        text-align: center;
+        pointer-events: none;
+        line-height: 1.1;
+        font-weight: 700;
+        letter-spacing: .3px;
+        padding-bottom: 4px;
       }
-      #center-REMOVE {
-        position: absolute; left: 0; right: 0; bottom: 10%;
-        text-align: center; pointer-events: none;
-      }
-      /* Label only (no numeric value) */
-      #label { line-height: 1.1; font-weight: 700; letter-spacing: .3px; }
     </style>
     <div id="root">
       <svg id="gauge" preserveAspectRatio="xMidYMid meet" part="gauge"></svg>
@@ -56,7 +56,6 @@
       this._labelEl = this._shadow.getElementById('label');
       this._w = 300; this._h = 200;
       this._prevValue = null; // for tween
-      this._knobR = 10;       // will be updated in _drawNeedle
     }
 
     connectedCallback() { this._resize(); this._render(true); }
@@ -190,7 +189,6 @@
         // redraw needle/center only (leave bands)
         this._drawNeedle(cx, cy, r, strokeW, toAngle(v));
         this._paintLabel(v, scaleMin, scaleMax, w);
-        this._positionLabel(cy, w, h); // keep label under knob
 
         if (t < 1) requestAnimationFrame(step);
         else this._prevValue = target;
@@ -249,17 +247,9 @@
 
       this._labelEl.textContent = text;
       this._labelEl.style.color = color;
-      this._labelEl.style.fontSize = Math.max(14, w * 0.065) + 'px';
+      this._labelEl.style.fontSize = Math.min(Math.max(14, w * 0.07), 28) + 'px';
     }
   }
 
   customElements.define('com-sap-sac-sample-echarts-gaugegrade01rg', RiskGauge);
-
-    _positionLabel(cy, w, h) {
-      const gap = Math.max(8, this._knobR * 0.6);
-      const y = Math.min(h - 4, cy + this._knobR + gap);
-      this._labelEl.style.top = y + 'px';
-      this._labelEl.style.left = '0';
-      this._labelEl.style.right = '0';
-    }
 })();
