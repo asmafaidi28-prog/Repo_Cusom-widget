@@ -238,13 +238,6 @@
     _paintLabel(v, scaleMin, scaleMax, w) {
       // normalize to 0..5 for interval coloring even if actual scale is 0..1
       const v05 = (v - scaleMin) / (scaleMax - scaleMin || 1) * 5;
-      let color = '#256f3a', text = 'منخفض';
-      if      (v05 >= 0 && v05 < 1) { color = '#256f3a'; text = 'منخفض'; }
-      else if (v05 >= 1 && v05 < 2) { color = '#87c122'; text = 'منخفض متوسط'; }
-      else if (v05 >= 2 && v05 < 3) { color = '#f9e339'; text = 'متوسط'; }
-      else if (v05 >= 3 && v05 < 4) { color = '#ea9617'; text = 'مرتفع متوسط'; }
-      else                          { color = '#ea1e32'; text = 'مرتفع'; }
-
       let color = '#ea1e32', text = 'منخفض';
       if      (v05 >= 0 && v05 < 1) { color = '#ea1e32'; text = 'منخفض'; }
       else if (v05 >= 1 && v05 < 2) { color = '#ea9617'; text = 'منخفض متوسط'; }
