@@ -17,49 +17,88 @@ async render() {
     }))
     .sort((a, b) => a.value - b.value);
 
-  // 🧹 Ensure no old chart instance stays in memory
+  // 🧹 Clean up old chart instance if it exists
   if (this._chart) {
     this._chart.dispose();
   }
 
-  // ⛔️ Remove any inherited SAC CSS styles
+  // ✅ Create dynamic style to match your attached color palette
   const styleOverride = document.createElement("style");
   styleOverride.innerHTML = `
     :host {
       all: initial !important;
     }
+    #root {
+      background-color: #1D2D3E;       /* dark background */
+      border-top: 5px solid #BD9E68;   /* orange/gold top stripe */
+      border-radius: 6px;
+    }
   `;
   this._shadowRoot.appendChild(styleOverride);
 
-  // ✅ Initialize chart without SAC theme context
+  // ✅ Initialize chart safely without SAC theme
   const myChart = echarts.init(this._root, null, { renderer: "canvas" });
 
-  // ✅ Force your color palette
-  const customColors = ["#E67E22", "#95A5A6", "#F39C12", "#BDC3C7"];
+  // 🎨 Color palette adjustable here:
+  const palette = {
+    primary: "#BD9E68",  // gold/orange
+    secondary: "#A7A9AC", // grey tone
+    accent1: "#E67E22",  // deep orange
+    accent2: "#95A5A6",  // lighter grey
+  };
+
+  const customColors = [
+    palette.primary,
+    palette.secondary,
+    palette.accent1,
+    palette.accent2,
+  ];
 
   const option = {
-    backgroundColor: "transparent",
-    color: customColors, // Force global colors
-    tooltip: { trigger: "item" },
+    backgroundColor: "#1D2D3E", // match container
+    color: customColors,
+    tooltip: {
+      trigger: "item",
+      backgroundColor: "#2C3E50",
+      borderColor: "#BD9E68",
+      textStyle: { color: "#F8F8F8" },
+    },
+    legend: {
+      orient: "vertical",
+      right: 10,
+      top: "center",
+      textStyle: { color: "#E0E0E0" },
+    },
     series: [
       {
         name: "",
         type: "pie",
-        radius: "60%",
-        center: ["50%", "50%"],
+        radius: ["45%", "70%"], // donut style
+        center: ["45%", "50%"],
         data,
         label: {
-          color: "#1D2D3E",
+          color: "#F0F0F0",
+          fontWeight: 500,
         },
         labelLine: {
-          lineStyle: { color: "#1D2D3E" },
+          lineStyle: { color: "#BD9E68" },
           smooth: 0.2,
           length: 10,
           length2: 20,
         },
         itemStyle: {
+          borderColor: "#1D2D3E",
+          borderWidth: 2,
           shadowBlur: 20,
-          shadowColor: "rgba(0, 0, 0, 0.2)",
+          shadowColor: "rgba(0, 0, 0, 0.3)",
+        },
+        emphasis: {
+          scale: true,
+          scaleSize: 10,
+          itemStyle: {
+            shadowColor: "rgba(255, 215, 160, 0.6)",
+            shadowBlur: 25,
+          },
         },
         animationType: "scale",
         animationEasing: "elasticOut",
@@ -68,9 +107,8 @@ async render() {
     ],
   };
 
-  // ✅ Force full override — prevents SAC theme merge
+  // 🧩 Apply options and refresh chart
   myChart.clear();
   myChart.setOption(option, { notMerge: true, lazyUpdate: false });
   this._chart = myChart;
 }
-
