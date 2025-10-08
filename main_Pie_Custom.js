@@ -12,22 +12,18 @@ var getScriptPromisify = (src) => {
 (function () {
   const prepared = document.createElement("template");
   prepared.innerHTML = `
-        <style>
-        </style>
-        <div id="root" style="width: 100%; height: 100%;">
-        </div>
-      `;
+    <style>
+    </style>
+    <div id="root" style="width: 100%; height: 100%;"></div>
+  `;
+
   class CustomPieSample extends HTMLElement {
     constructor() {
       super();
-
       this._shadowRoot = this.attachShadow({ mode: "open" });
       this._shadowRoot.appendChild(prepared.content.cloneNode(true));
-
       this._root = this._shadowRoot.getElementById("root");
-
       this._props = {};
-
       this.render();
     }
 
@@ -51,44 +47,36 @@ var getScriptPromisify = (src) => {
 
       const dimension = this._myDataSource.metadata.feeds.dimensions.values[0];
       const measure = this._myDataSource.metadata.feeds.measures.values[0];
-      const data = this._myDataSource.data
-        .map((data) => {
-          return {
-            name: data[dimension].label,
-            value: data[measure].raw,
-          };
-        })
-        .sort(function (a, b) {
-          return a.value - b.value;
-        });
 
-      const myChart = echarts.init(this._root, "wight");
+      const data = this._myDataSource.data
+        .map((d) => ({
+          name: d[dimension].label,
+          value: d[measure].raw,
+        }))
+        .sort((a, b) => a.value - b.value);
+
+      // ✅ Destroy old chart instance to ensure proper re-render and color refresh in SAC
+      if (this._chart) {
+        this._chart.dispose();
+      }
+
+      const myChart = echarts.init(this._root);
+
+      // ✅ Orange–Grey palette
+      const customColors = ["#E67E22", "#95A5A6", "#F39C12", "#BDC3C7"];
+
       const option = {
-        backgroundColor: "",
-        title: {
-          text: "",
-          left: "center",
-          top: 20,
-          textStyle: {
-            color: "",
-          },
-        },
+        backgroundColor: "transparent",
+        useTheme: false, // ✅ Prevent SAC theme override
+        color: customColors, // ✅ Apply color palette globally
         tooltip: {
           trigger: "item",
-        },
-        visualMap: {
-          show: false,
-          min: 0,
-          max: data[data.length - 1].value * 1.5,
-          inRange: {
-            colorLightness: [0, 1],
-          },
         },
         series: [
           {
             name: "",
             type: "pie",
-            radius: "55%",
+            radius: "60%",
             center: ["50%", "50%"],
             data,
             roseType: "radius",
@@ -104,20 +92,26 @@ var getScriptPromisify = (src) => {
               length2: 20,
             },
             itemStyle: {
-              color: "#bd9e68", // 🔸 gold color for the slices
-              shadowBlur: 15,
-              shadowColor: "rgba(200, 200, 200, 0.5)", // 🔸 light grey shadow
+              shadowBlur: 20,
+              shadowColor: "rgba(0, 0, 0, 0.2)",
             },
             animationType: "scale",
             animationEasing: "elasticOut",
-            animationDelay: function (idx) {
-              return Math.random() * 200;
-            },
+            animationDelay: (idx) => Math.random() * 200,
           },
         ],
       };
-      myChart.setOption(option);
+
+      // ✅ Force full override (important for SAC)
+      myChart.clear();
+      myChart.setOption(option, true);
+      this._chart = myChart;
     }
+  }
+
+  customElements.define("com-sap-sample-echarts-custom_pie_chart", CustomPieSample);
+})();
+
   }
 
   customElements.define("com-sap-sample-echarts-custom_pie_chart", CustomPieSample);
