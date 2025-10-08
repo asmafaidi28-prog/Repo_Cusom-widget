@@ -50,6 +50,7 @@ var getScriptPromisify = (src) => {
     async render() {
       await getScriptPromisify(
         "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+        
       );
 
       if (!this._myDataSource || this._myDataSource.state !== "success") {
@@ -75,7 +76,7 @@ var getScriptPromisify = (src) => {
           left: 'center',
           top: 20,
           textStyle: {
-            color: '#666666'
+            color: ''
           }
         },
         tooltip: {
@@ -96,24 +97,21 @@ var getScriptPromisify = (src) => {
             radius: '55%',
             center: ['50%', '50%'],
             data,
+         
             roseType: 'radius',
             label: {
-              color: '#4A4A4A'
+              color: '#1D2D3E'
             },
             labelLine: {
               lineStyle: {
-                color: '#4A4A4A'
+                color: '#1D2D3E'
               },
               smooth: 0.2,
               length: 10,
               length2: 20
             },
             itemStyle: {
-              // Updated color palette: orange + grey
-              color: (params) => {
-                const colors = ['#FF8C00', '#FFA733', '#FFB84D', '#FFD580', '#E0E0E0', '#B0B0B0', '#808080'];
-                return colors[params.dataIndex % colors.length];
-              },
+              color: '#0070F2',
               shadowBlur: 15,
               shadowColor: 'rgba(0, 0, 0, 0.3)'
             },
@@ -122,6 +120,7 @@ var getScriptPromisify = (src) => {
             animationDelay: function (idx) {
               return Math.random() * 200;
             }
+            
           }
         ]
       };
