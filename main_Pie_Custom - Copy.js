@@ -1,121 +1,82 @@
-var getScriptPromisify = (src) => {
-  const __define = define;
-  define = undefined;
-  return new Promise((resolve) => {
-    $.getScript(src, () => {
-      define = __define;
-      resolve();
-    });
-  });
-};
+async render() {
+  await getScriptPromisify(
+    "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+  );
 
-(function () {
-  const prepared = document.createElement("template");
-  prepared.innerHTML = `
-        <style>
-        </style>
-        <div id="root" style="width: 100%; height: 100%;">
-        </div>
-      `;
-  class CustomPieSample extends HTMLElement {
-    constructor() {
-      super();
+  if (!this._myDataSource || this._myDataSource.state !== "success") {
+    return;
+  }
 
-      this._shadowRoot = this.attachShadow({ mode: "open" });
-      this._shadowRoot.appendChild(prepared.content.cloneNode(true));
+  const dimension = this._myDataSource.metadata.feeds.dimensions.values[0];
+  const measure = this._myDataSource.metadata.feeds.measures.values[0];
 
-      this._root = this._shadowRoot.getElementById("root");
+  const data = this._myDataSource.data
+    .map((d) => ({
+      name: d[dimension].label,
+      value: d[measure].raw,
+    }))
+    .sort((a, b) => a.value - b.value);
 
-      this._props = {};
+  if (this._chart) this._chart.dispose();
 
-      this.render();
-    }
+  // ⚙️ Reset SAC inherited styling (critical)
+  const styleReset = document.createElement("style");
+  styleReset.innerHTML = `
+    :host { all: initial !important; }
+    #root { background: transparent !important; }
+  `;
+  this._shadowRoot.appendChild(styleReset);
 
-    onCustomWidgetResize(width, height) {
-      this.render();
-    }
+  const myChart = echarts.init(this._root, null, { renderer: "canvas" });
 
-    set myDataSource(dataBinding) {
-      this._myDataSource = dataBinding;
-      this.render();
-    }
+  // 🎨 Custom color palette (orange-grey)
+  const primary = this._primaryColor || "#E67E22";
+  const secondary = this._secondaryColor || "#95A5A6";
+  const palette = [primary, secondary, "#F39C12", "#BDC3C7"];
 
-    async render() {
-      await getScriptPromisify(
-        "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
-      );
-
-      if (!this._myDataSource || this._myDataSource.state !== "success") {
-        return;
-      }
-
-      const dimension = this._myDataSource.metadata.feeds.dimensions.values[0];
-      const measure = this._myDataSource.metadata.feeds.measures.values[0];
-      const data = this._myDataSource.data
-        .map((data) => {
-          return {
-            name: data[dimension].label,
-            value: data[measure].raw,
-          };
-        })
-        .sort(function (a, b) {
-          return a.value - b.value;
-        });
-
-      const myChart = echarts.init(this._root, "wight");
-      const option = {
-        backgroundColor: "",
-        title: {
-          text: "",
-          left: "center",
-          top: 20,
-          textStyle: {
-            color: "",
+  const option = {
+    backgroundColor: "transparent",
+    color: palette,
+    useTheme: false, // ✅ prevents SAC theme override
+    tooltip: { trigger: "item" },
+    series: [
+      {
+        type: "pie",
+        radius: "55%",
+        center: ["50%", "50%"],
+        data,
+        label: { color: "#1D2D3E" },
+        labelLine: {
+          lineStyle: { color: "#1D2D3E" },
+          smooth: 0.3,
+          length: 10,
+          length2: 20,
+        },
+        itemStyle: {
+          borderColor: "#fff",
+          borderWidth: 2,
+          shadowBlur: 15,
+          shadowColor: "rgba(0,0,0,0.3)",
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 30,
+            shadowColor: "rgba(255,180,100,0.6)",
           },
         },
-        tooltip: {
-          trigger: "item",
-        },
-        visualMap: {
-          show: false,
-          min: 0,
-          max: data[data.length - 1].value * 1.5,
-          inRange: {
-            colorLightness: [0, 1],
-          },
-        },
-        series: [
-          {
-            name: "",
-            type: "pie",
-            radius: "55%",
-            center: ["50%", "50%"],
-            data,
-            roseType: "radius",
-            label: {
-              color: "#1D2D3E",
-            },
-            labelLine: {
-              lineStyle: {
-                color: "#1D2D3E",
-              },
-              smooth: 0.2,
-              length: 10,
-              length2: 20,
-            },
-            itemStyle: {
-              color: "#bd9e68", // 🔸 gold color for the slices
-              shadowBlur: 15,
-              shadowColor: "rgba(200, 200, 200, 0.5)", // 🔸 light grey shadow
-            },
-            animationType: "scale",
-            animationEasing: "elasticOut",
-            animationDelay: function (idx) {
-              return Math.random() * 200;
-            },
-          },
-        ],
-      };
+        animationType: "scale",
+        animationEasing: "elasticOut",
+        animationDelay: (idx) => Math.random() * 200,
+      },
+    ],
+  };
+
+  // ✅ Force full override to bypass SAC theme merge
+  myChart.clear();
+  myChart.setOption(option, { notMerge: true, lazyUpdate: false });
+  this._chart = myChart;
+}
+
       myChart.setOption(option);
     }
   }
