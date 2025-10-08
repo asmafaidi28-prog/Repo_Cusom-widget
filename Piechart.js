@@ -54,10 +54,16 @@ var getScriptPromisify = (src) => {
       const dimension = this._myDataSource.metadata.feeds.dimensions.values[0];
       const measure = this._myDataSource.metadata.feeds.measures.values[0];
 
-      const data = this._myDataSource.data.map((row) => ({
-        name: row[dimension].label,
-        value: row[measure].raw
-      }));
+     const data = this._myDataSource.data
+  .map((row) => ({
+    name: row[dimension].label,
+    value: row[measure].raw
+  }))
+  .filter(item => {
+    if (this._props.hideZeroValues === false) return true;
+    return item.value !== 0 && item.value !== null;
+  });
+
 
       const chart = echarts.init(this._root);
       this.chart = chart;
@@ -135,3 +141,4 @@ var getScriptPromisify = (src) => {
 
   customElements.define("com-sap-pie-orangegrey", CustomPieChartOrangeGrey);
 })();
+
