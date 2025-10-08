@@ -1,20 +1,13 @@
-/*var getScriptPromisify = (src) => {
-  return new Promise((resolve) => {
-    $.getScript(src, resolve);
-  });
-};*/
-
 var getScriptPromisify = (src) => {
-  // Workaround with conflict between geo widget and echarts.
-  const __define = define
-  define = undefined
-  return new Promise(resolve => {
+  const __define = define;
+  define = undefined;
+  return new Promise((resolve) => {
     $.getScript(src, () => {
-      define = __define
-      resolve()
-    })
-  })
-}
+      define = __define;
+      resolve();
+    });
+  });
+};
 
 (function () {
   const prepared = document.createElement("template");
@@ -50,7 +43,6 @@ var getScriptPromisify = (src) => {
     async render() {
       await getScriptPromisify(
         "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
-        
       );
 
       if (!this._myDataSource || this._myDataSource.state !== "success") {
@@ -59,70 +51,70 @@ var getScriptPromisify = (src) => {
 
       const dimension = this._myDataSource.metadata.feeds.dimensions.values[0];
       const measure = this._myDataSource.metadata.feeds.measures.values[0];
-      const data = this._myDataSource.data.map((data) => {
-        return {
-          name: data[dimension].label,
-          value: data[measure].raw
-        }
-      }).sort(function(a, b){
-        return a.value - b.value
-      })
+      const data = this._myDataSource.data
+        .map((data) => {
+          return {
+            name: data[dimension].label,
+            value: data[measure].raw,
+          };
+        })
+        .sort(function (a, b) {
+          return a.value - b.value;
+        });
 
-      const myChart = echarts.init(this._root, "wight")
+      const myChart = echarts.init(this._root, "wight");
       const option = {
-        backgroundColor: '',
+        backgroundColor: "",
         title: {
-          text: '',
-          left: 'center',
+          text: "",
+          left: "center",
           top: 20,
           textStyle: {
-            color: ''
-          }
+            color: "",
+          },
         },
         tooltip: {
-          trigger: 'item'
+          trigger: "item",
         },
         visualMap: {
           show: false,
           min: 0,
           max: data[data.length - 1].value * 1.5,
           inRange: {
-            colorLightness: [0, 1]
-          }
+            colorLightness: [0, 1],
+          },
         },
         series: [
           {
-            name: '',
-            type: 'pie',
-            radius: '55%',
-            center: ['50%', '50%'],
+            name: "",
+            type: "pie",
+            radius: "55%",
+            center: ["50%", "50%"],
             data,
-         
-            roseType: 'radius',
+            roseType: "radius",
             label: {
-              color: '#1D2D3E'
+              color: "#1D2D3E",
             },
             labelLine: {
               lineStyle: {
-                color: '#1D2D3E'
+                color: "#1D2D3E",
               },
               smooth: 0.2,
               length: 10,
-              length2: 20
+              length2: 20,
             },
             itemStyle: {
-              color: '#0070F2',
+              color: "#bd9e68", // 🔸 gold color for the slices
               shadowBlur: 15,
-              shadowColor: 'rgba(0, 0, 0, 0.3)'
+              shadowColor: "rgba(200, 200, 200, 0.5)", // 🔸 light grey shadow
             },
-            animationType: 'scale',
-            animationEasing: 'elasticOut',
+            animationType: "scale",
+            animationEasing: "elasticOut",
             animationDelay: function (idx) {
               return Math.random() * 200;
-            }
-            
-          }
-        ]
+            },
+          },
+        ],
       };
       myChart.setOption(option);
     }
