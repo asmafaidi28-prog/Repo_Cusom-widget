@@ -57,7 +57,7 @@ var getScriptPromisify = (src) => {
     }
     const option = {
       title: {
-        text: 'Feature Sample: Gradient Color, Shadow, Click Zoom'
+        text: '      '
       },
       xAxis: {
         data: dataAxis,
